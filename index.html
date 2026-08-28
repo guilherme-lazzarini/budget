@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planejamento Financeiro</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Biblioteca Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Cabeçalho -->
+        <header class="header">
+            <button class="btn-chart" id="toggle-btn" onclick="toggleView()">📊 Gráfico</button>
+            <div class="month-selector">
+                <strong>Budget</strong>
+            </div>
+            <div class="header-right">
+                <!-- Botão de Planejamento Quinzenal -->
+                <button class="btn-eye" id="toggle-quinc-btn" onclick="toggleQuincView()" title="Planejamento Dia 01 / 15">📅</button>
+                <button class="btn-eye" id="toggle-privacy-btn" onclick="togglePrivacy()" title="Esconder/Mostrar Valores">🔒</button>
+                <span class="icon">🐷</span>
+            </div>
+        </header>
+
+        <!-- Painel de Saldo Líquido -->
+        <div class="balance-section">
+            <div class="balance-label">Saldo Restante</div>
+            <h2 class="balance-value" id="net-balance">R$0.00</h2>
+        </div>
+
+        <!-- VISÃO 1: LISTA DE CATEGORIAS -->
+        <div id="view-categories">
+            <div class="section-title">Expense <span id="total-expense">R$0.00</span> ▾</div>
+            <div class="grid" id="expense-grid"></div>
+
+            <div class="section-title">Income <span id="total-income">R$0.00</span> ▾</div>
+            <div class="grid" id="income-grid"></div>
+        </div>
+
+        <!-- VISÃO 2: GRÁFICO DE DESPESAS -->
+        <div id="view-chart" class="hidden">
+            <div class="section-title">Análise de Despesas</div>
+            <div class="chart-main-container">
+                <canvas id="budgetChart"></canvas>
+            </div>
+        </div>
+
+        <!-- VISÃO 3: PLANEJAMENTO QUINZENAL (Dia 01 e Dia 15) -->
+        <div id="view-quinc" class="hidden">
+            <div class="section-title">Planejamento Quinzenal (Despesas)</div>
+            
+            <div class="quinc-container" style="display: flex; gap: 12px;">
+                <!-- Dia 01 -->
+                <div style="flex: 1; background: #E3F2FD; padding: 12px; border-radius: 12px; border: 1px solid #a3d1ff;">
+                    <h3 style="margin-top: 0; color: #0d47a1; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem;">
+                        <span>Dia 01</span>
+                        <span id="quinc-1-total" style="font-size: 0.85rem;">R$0.00</span>
+                    </h3>
+                    <div id="quinc-1-list" style="font-size: 0.9rem; color: #333;">Nenhuma conta.</div>
+                </div>
+
+                <!-- Dia 15 -->
+                <div style="flex: 1; background: #FFF3E0; padding: 12px; border-radius: 12px; border: 1px solid #ffcca6;">
+                    <h3 style="margin-top: 0; color: #e65100; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem;">
+                        <span>Dia 15</span>
+                        <span id="quinc-15-total" style="font-size: 0.85rem;">R$0.00</span>
+                    </h3>
+                    <div id="quinc-15-list" style="font-size: 0.9rem; color: #333;">Nenhuma conta.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para gerenciar contas da categoria -->
+    <div class="modal" id="transaction-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Nome da Categoria</h3>
+                <div class="header-actions">
+                    <button class="btn-add-icon" onclick="toggleAddForm()" title="Adicionar Nova Conta">+</button>
+                    <button class="btn-close" onclick="closeModal()">×</button>
+                </div>
+            </div>
+            
+            <div class="account-list" id="account-list"></div>
+
+            <div class="add-account-form hidden" id="add-form">
+                <h4>Adicionar nova conta</h4>
+                <input type="text" id="transaction-desc" placeholder="Nome da conta (Ex: Mercado)">
+                <input type="text" inputmode="decimal" id="transaction-amount" placeholder="Valor (Ex: 150.50)">
+                <button class="btn btn-save" onclick="saveTransaction()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Integração com Firebase e Lógica da Aplicação -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+        import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6yemAvkDq0auJBUGSDoJ3PP2s7Nt4WVE",
+            authDomain: "bucket-314159.firebaseapp.com",
+            databaseURL: "https://bucket-314159-default-rtdb.firebaseio.com/",
+            projectId: "bucket-314159",
+            storageBucket: "bucket-314159.firebasestorage.app",
+            messagingSenderId: "725579120022",
+            appId: "1:725579120022:web:3d852b76e54633d4a231b7",
+            measurementId: "G-TWGCBJJ3EY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const userPath = "budgets/usuario_padrao";
+
+        const categories = [
+            { id: 'monthly_bills', name: 'Monthly Bills', type: 'expense', color: '#FBE9E7', icon: '📅', border: '#ffc1b5' },
+            { id: 'food', name: 'Food', type: 'expense', color: '#FFF3E0', icon: '🍽️', border: '#ffcca6' },
+            { id: 'transport', name: 'Transport', type: 'expense', color: '#E3F2FD', icon: '🚌', border: '#a3d1ff' },
+            { id: 'health', name: 'Health', type: 'expense', color: '#E0F2F1', icon: '🏥', border: '#99d9d4' },
+            { id: 'lifestyle', name: 'Lifestyle', type: 'expense', color: '#F3E5F5', icon: '🍹', border: '#d9b3e6' },
+            { id: 'financial', name: 'Financial', type: 'expense', color: '#FFEBEE', icon: '🏦', border: '#ffb3bd' },
+            
+            { id: 'salary', name: 'Salary', type: 'income', color: '#E0F2F1', icon: '💳' },
+            { id: 'freelance', name: 'Freelance', type: 'income', color: '#F1F8E9', icon: '💎' },
+            { id: 'investment_inc', name: 'Investment', type: 'income', color: '#F9FBE7', icon: '🪙' }
+        ];
+
+        let currentCategoryId = null;
+        let myChart = null;
+        let isShowingChart = false;
+        let isShowingQuinc = false;
+        let isPrivacyMode = true;
+        let budgetData = {};
+
+        window.togglePrivacy = function() {
+            isPrivacyMode = !isPrivacyMode;
+            const btn = document.getElementById('toggle-privacy-btn');
+            btn.innerHTML = isPrivacyMode ? '🔒' : '🔓';
+            render();
+        }
+
+        function formatMoney(value) {
+            if (isPrivacyMode) {
+                return 'R$ ••••••';
+            }
+            return `R$${Number(value).toFixed(2)}`;
+        }
+
+        async function initDB() {
+            const dbRef = ref(db);
+            const snapshot = await get(child(dbRef, userPath));
+
+            if (snapshot.exists()) {
+                budgetData = snapshot.val();
+                categories.forEach(cat => {
+                    if (!budgetData[cat.id]) budgetData[cat.id] = [];
+                });
+            } else {
+                budgetData = {};
+                categories.forEach(cat => budgetData[cat.id] = []);
+                await set(ref(db, userPath), budgetData);
+            }
+            render();
+        }
+
+        async function saveDB() {
+            await set(ref(db, userPath), budgetData);
+        }
+
+        function getCategoryTotal(accountsArray) {
+            if (!Array.isArray(accountsArray)) return 0;
+            return accountsArray.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+        }
+
+        window.toggleView = function() {
+            isShowingChart = !isShowingChart;
+            const btn = document.getElementById('toggle-btn');
+            const btnQuinc = document.getElementById('toggle-quinc-btn');
+            const viewCategories = document.getElementById('view-categories');
+            const viewChart = document.getElementById('view-chart');
+            const viewQuinc = document.getElementById('view-quinc');
+            const balanceSection = document.querySelector('.balance-section');
+
+            if (isShowingQuinc) {
+                isShowingQuinc = false;
+                viewQuinc.classList.add('hidden');
+                btnQuinc.innerHTML = '📅';
+            }
+
+            if (isShowingChart) {
+                viewCategories.classList.add('hidden');
+                viewChart.classList.remove('hidden');
+                balanceSection.style.display = 'block';
+                btn.innerHTML = '🗂️ Categorias';
+                renderChart();
+            } else {
+                viewChart.classList.add('hidden');
+                viewCategories.classList.remove('hidden');
+                balanceSection.style.display = 'block';
+                btn.innerHTML = '📊 Gráfico';
+            }
+        }
+
+        window.toggleQuincView = function() {
+            isShowingQuinc = !isShowingQuinc;
+            const btnQuinc = document.getElementById('toggle-quinc-btn');
+            const btnChart = document.getElementById('toggle-btn');
+            const viewCategories = document.getElementById('view-categories');
+            const viewChart = document.getElementById('view-chart');
+            const viewQuinc = document.getElementById('view-quinc');
+            const balanceSection = document.querySelector('.balance-section');
+
+            if (isShowingChart) {
+                isShowingChart = false;
+                viewChart.classList.add('hidden');
+                btnChart.innerHTML = '📊 Gráfico';
+            }
+
+            if (isShowingQuinc) {
+                viewCategories.classList.add('hidden');
+                viewQuinc.classList.remove('hidden');
+                balanceSection.style.display = 'none'; // Esconde o saldo no quinzenal
+                btnQuinc.innerHTML = '🗂️';
+                renderQuincView();
+            } else {
+                viewQuinc.classList.add('hidden');
+                viewCategories.classList.remove('hidden');
+                balanceSection.style.display = 'block'; // Mostra o saldo novamente
+                btnQuinc.innerHTML = '📅';
+            }
+        }
+
+        function renderQuincView() {
+            if (!budgetData.quincMap) {
+                budgetData.quincMap = {};
+            }
+
+            const list1 = document.getElementById('quinc-1-list');
+            const list15 = document.getElementById('quinc-15-list');
+
+            list1.innerHTML = '';
+            list15.innerHTML = '';
+
+            let total1 = 0;
+            let total15 = 0;
+            let hasAccounts1 = false;
+            let hasAccounts15 = false;
+
+            categories.filter(cat => cat.type === 'expense').forEach(cat => {
+                const accounts = budgetData[cat.id] || [];
+                accounts.forEach((acc, index) => {
+                    const accountKey = `${cat.id}___${index}`;
+                    const assignedDay = budgetData.quincMap[accountKey] || 1;
+
+                    const arrowBtn = assignedDay == 1 
+                        ? `<button onclick="moveQuinc('${accountKey}', 15)" title="Mover para o Dia 15" style="background:#f8f9fa; border:1px solid #ced4da; border-radius:4px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.6rem; padding:0;">➡️</button>`
+                        : `<button onclick="moveQuinc('${accountKey}', 1)" title="Mover para o Dia 01" style="background:#f8f9fa; border:1px solid #ced4da; border-radius:4px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.6rem; padding:0;">⬅️</button>`;
+
+                    const itemHtml = `
+                        <div style="margin-bottom: 6px; display: flex; flex-direction: column; background: #ffffff; padding: 6px 8px; border-radius: 6px; gap: 2px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                            <span style="font-size: 0.52rem; color: #6c757d; text-transform: uppercase; font-weight: 700;">${cat.name}</span>
+                            <span style="font-size: 0.68rem; font-weight: 600; color: #212529; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${cat.icon} ${acc.desc}</span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px; padding-top: 2px; border-top: 1px dashed #f1f3f5;">
+                                <strong style="font-size: 0.68rem; font-weight: 700; color: #343a40;">${formatMoney(acc.amount)}</strong>
+                                ${arrowBtn}
+                            </div>
+                        </div>`;
+
+                    if (assignedDay == 1) {
+                        list1.innerHTML += itemHtml;
+                        total1 += Number(acc.amount);
+                        hasAccounts1 = true;
+                    } else {
+                        list15.innerHTML += itemHtml;
+                        total15 += Number(acc.amount);
+                        hasAccounts15 = true;
+                    }
+                });
+            });
+
+            if (!hasAccounts1) list1.innerHTML = '<span style="color:#888; font-style:italic; font-size: 0.8rem;">Nenhuma conta.</span>';
+            if (!hasAccounts15) list15.innerHTML = '<span style="color:#888; font-style:italic; font-size: 0.8rem;">Nenhuma conta.</span>';
+
+            document.getElementById('quinc-1-total').innerText = formatMoney(total1);
+            document.getElementById('quinc-15-total').innerText = formatMoney(total15);
+        }
+
+        window.moveQuinc = async function(accountKey, targetDay) {
+            if (!budgetData.quincMap) {
+                budgetData.quincMap = {};
+            }
+            budgetData.quincMap[accountKey] = targetDay;
+            await saveDB();
+            renderQuincView();
+        }
+
+        function render() {
+            const expenseGrid = document.getElementById('expense-grid');
+            const incomeGrid = document.getElementById('income-grid');
+            
+            expenseGrid.innerHTML = '';
+            incomeGrid.innerHTML = '';
+            
+            let totalExpense = 0;
+            let totalIncome = 0;
+
+            categories.forEach(cat => {
+                const accounts = budgetData[cat.id] || [];
+                const categorySum = getCategoryTotal(accounts);
+                if (cat.type === 'expense') totalExpense += categorySum;
+                if (cat.type === 'income') totalIncome += categorySum;
+            });
+
+            categories.forEach(cat => {
+                const accounts = budgetData[cat.id] || [];
+                const categorySum = getCategoryTotal(accounts);
+                
+                let percentageHtml = '';
+                if (categorySum > 0) {
+                    let pct = 0;
+                    if (cat.type === 'expense' && totalExpense > 0) {
+                        pct = (categorySum / totalExpense) * 100;
+                    } else if (cat.type === 'income' && totalIncome > 0) {
+                        pct = (categorySum / totalIncome) * 100;
+                    }
+                    percentageHtml = `<div class="card-percentage">${pct.toFixed(1)}%</div>`;
+                }
+
+                const cardHtml = `
+                    <div class="card" style="background-color: ${cat.color}" onclick="openModal('${cat.id}', '${cat.name}')">
+                        <div class="card-title">${cat.name}</div>
+                        <div class="card-icon">${cat.icon}</div>
+                        <div class="card-value">${formatMoney(categorySum)}</div>
+                        ${percentageHtml}
+                    </div>
+                `;
+
+                if (cat.type === 'expense') {
+                    expenseGrid.innerHTML += cardHtml;
+                } else {
+                    incomeGrid.innerHTML += cardHtml;
+                }
+            });
+
+            document.getElementById('total-expense').innerText = formatMoney(totalExpense);
+            document.getElementById('total-income').innerText = formatMoney(totalIncome);
+
+            const netBalance = totalIncome - totalExpense;
+            const balanceEl = document.getElementById('net-balance');
+            balanceEl.innerText = formatMoney(netBalance);
+            
+            if (netBalance >= 0) {
+                balanceEl.className = 'balance-value balance-positive';
+            } else {
+                balanceEl.className = 'balance-value balance-negative';
+            }
+
+            if (isShowingChart) renderChart();
+            if (isShowingQuinc) renderQuincView();
+        }
+
+        function renderChart() {
+            const labels = [];
+            const chartValues = [];
+            const bgColors = [];
+            const borderColors = [];
+
+            let totalExpenseSum = 0;
+            categories.forEach(cat => {
+                if (cat.type === 'expense') {
+                    totalExpenseSum += getCategoryTotal(budgetData[cat.id] || []);
+                }
+            });
+
+            categories.forEach(cat => {
+                if (cat.type === 'expense') {
+                    const total = getCategoryTotal(budgetData[cat.id] || []);
+                    if (total > 0) {
+                        let percentage = totalExpenseSum > 0 ? ((total / totalExpenseSum) * 100).toFixed(1) : 0;
+                        labels.push(`${cat.name} (${percentage}%)`);
+                        chartValues.push(total);
+                        bgColors.push(cat.color);
+                        borderColors.push(cat.border);
+                    }
+                }
+            });
+
+            const ctx = document.getElementById('budgetChart').getContext('2d');
+            
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            if (chartValues.length === 0) {
+                labels.push('Sem Despesas (0%)');
+                chartValues.push(1);
+                bgColors.push('#f0f0f0');
+                borderColors.push('#e0e0e0');
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: chartValues,
+                        backgroundColor: bgColors,
+                        borderColor: borderColors,
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto', size: 13 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.raw;
+                                    let total = context.chart._metasets[context.datasetIndex].total;
+                                    let percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                    
+                                    if (context.label.includes('Sem Despesas')) return ' R$0.00';
+                                    return ` ${formatMoney(value)} (${percentage})`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        window.openModal = function(categoryId, categoryName) {
+            currentCategoryId = categoryId;
+            document.getElementById('modal-title').innerText = categoryName;
+            document.getElementById('transaction-desc').value = '';
+            document.getElementById('transaction-amount').value = '';
+            document.getElementById('add-form').classList.add('hidden');
+            renderModalList();
+            document.getElementById('transaction-modal').classList.add('active');
+        }
+
+        window.closeModal = function() {
+            document.getElementById('transaction-modal').classList.remove('active');
+            currentCategoryId = null;
+        }
+
+        window.toggleAddForm = function() {
+            document.getElementById('add-form').classList.toggle('hidden');
+        }
+
+        function renderModalList() {
+            const accounts = budgetData[currentCategoryId] || [];
+            const listContainer = document.getElementById('account-list');
+            
+            listContainer.innerHTML = '';
+            
+            if (accounts.length === 0) {
+                listContainer.innerHTML = '<p style="color: #888; font-size: 0.9rem;">Nenhuma conta adicionada.</p>';
+                return;
+            }
+
+            accounts.forEach((acc, index) => {
+                listContainer.innerHTML += `
+                    <div class="account-item">
+                        <div class="account-info">
+                            <span>${acc.desc}</span>
+                            <strong>${formatMoney(acc.amount)}</strong>
+                        </div>
+                        <button class="btn-delete" onclick="deleteTransaction(${index})" title="Remover">🗑️</button>
+                    </div>
+                `;
+            });
+        }
+
+        window.saveTransaction = async function() {
+            const descInput = document.getElementById('transaction-desc').value.trim();
+            const rawAmount = document.getElementById('transaction-amount').value.trim().replace(',', '.');
+            const amountInput = parseFloat(rawAmount);
+            
+            if (!descInput) {
+                alert("Por favor, insira o nome da conta.");
+                return;
+            }
+            if (isNaN(amountInput) || amountInput <= 0) {
+                alert("Por favor, insira um valor válido.");
+                return;
+            }
+
+            if (!budgetData[currentCategoryId] || !Array.isArray(budgetData[currentCategoryId])) {
+                budgetData[currentCategoryId] = [];
+            }
+
+            budgetData[currentCategoryId].push({
+                desc: descInput,
+                amount: amountInput
+            });
+            
+            await saveDB();
+            closeModal();
+            render();
+        }
+
+        window.deleteTransaction = async function(index) {
+            if (budgetData[currentCategoryId] && budgetData[currentCategoryId].length > index) {
+                budgetData[currentCategoryId].splice(index, 1);
+                delete budgetData.quincMap[`${currentCategoryId}___${index}`];
+                await saveDB();
+                renderModalList();
+                render();
+            }
+        }
+
+        initDB();
+    </script>
+</body>
+</html>

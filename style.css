@@ -1,0 +1,553 @@
+/* Variáveis de Cores e Fontes */
+:root {
+    --bg-color: #f7f8fa; 
+    --app-bg: #ffffff;
+    --text-main: #333333;
+    --primary-green: #4CAF50;
+    --primary-blue: #1976D2;
+    --danger-red: #D32F2F;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center; 
+    min-height: 100vh;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 420px;
+    background-color: var(--app-bg);
+    padding: 12px 10px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
+    min-height: 100vh;
+}
+
+/* Cabeçalho */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    color: #5C5C8A;
+    font-weight: 500;
+}
+
+.month-selector {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    color: #1A1A1A;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-eye {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-eye:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.btn-eye:active {
+    transform: scale(0.9);
+}
+
+.icon {
+    font-size: 1.3rem;
+}
+
+/* Painel de Saldo Restante */
+.balance-section {
+    background: #fff;
+    border-radius: 14px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    border: 1px solid #f4f4f4;
+}
+
+.balance-label {
+    color: #888;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.balance-value {
+    margin: 6px 0 0 0;
+    font-size: 1.8rem;
+    color: #1A1A1A;
+    transition: color 0.3s ease;
+}
+
+.balance-positive {
+    color: var(--primary-green) !important;
+}
+
+.balance-negative {
+    color: var(--danger-red) !important;
+}
+
+/* Títulos das Seções */
+.section-title {
+    font-size: 0.95rem;
+    text-align: center;
+    margin: 18px 0 10px;
+    font-weight: normal;
+}
+
+.section-title span {
+    font-weight: bold;
+}
+
+/* Grid de Categorias */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+/* Cartões */
+.card {
+    border-radius: 12px;
+    padding: 10px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    transition: transform 0.1s ease-in-out, box-shadow 0.2s;
+    border: 1px solid transparent;
+}
+
+.card:hover {
+    box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+}
+
+.card:active {
+    transform: scale(0.95);
+}
+
+.card-title {
+    font-size: 0.7rem;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin-bottom: 5px;
+}
+
+.card-value {
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.card-percentage {
+    margin-top: 4px;
+    font-size: 0.6rem;
+    color: #555;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 2px 4px;
+    border-radius: 6px;
+    font-weight: bold;
+    display: inline-block;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Botão de Alternar para Gráfico */
+.btn-chart {
+    background: #E3F2FD;
+    color: var(--primary-blue);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.2s ease, transform 0.1s;
+}
+
+.btn-chart:hover {
+    background: #BBDEFB;
+}
+
+.btn-chart:active {
+    transform: scale(0.95);
+}
+
+/* Container do Gráfico */
+.chart-main-container {
+    position: relative;
+    height: 300px; 
+    width: 100%;
+    margin-top: 15px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 15px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    border: 1px solid #f4f4f4;
+}
+
+/* ========================================================== */
+/* PLANEJAMENTO QUINZENAL (Disposição Vertical Perfeita)     */
+/* ========================================================== */
+.quinc-container {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.quinc-column {
+    flex: 1;
+    width: 50%;
+    min-width: 0;
+    border-radius: 10px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.quinc-col-1 {
+    background: #F0F7FF;
+    border: 1px solid #B6D4FE;
+}
+
+.quinc-col-15 {
+    background: #FFF8F0;
+    border: 1px solid #FFE0B2;
+}
+
+/* Cartão Individual Quinzenal */
+.quinc-item {
+    background: #ffffff;
+    padding: 6px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.04);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.quinc-item-cat {
+    font-size: 0.52rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1;
+}
+
+.quinc-item-desc {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #212529;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.quinc-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 2px;
+    padding-top: 2px;
+    border-top: 1px dashed #f1f3f5;
+}
+
+.quinc-item-amount {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #343a40;
+    white-space: nowrap;
+}
+
+.quinc-arrow-btn {
+    background: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.55rem;
+    transition: background 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.quinc-arrow-btn:hover {
+    background: #e2e6ea;
+}
+
+/* Modal de Inserção */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal.active {
+    display: flex;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-content {
+    background: #fff;
+    padding: 18px;
+    border-radius: 14px;
+    width: 90%;
+    max-width: 320px;
+    text-align: left;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text-main);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-add-icon {
+    background: #E3F2FD;
+    color: var(--primary-blue);
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.1s;
+}
+
+.btn-add-icon:hover {
+    background: #BBDEFB;
+}
+
+.btn-add-icon:active {
+    transform: scale(0.9);
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.btn-close:hover {
+    color: #333;
+}
+
+/* Lista de Contas no Modal */
+.account-list {
+    margin-bottom: 14px;
+    max-height: 140px;
+    overflow-y: auto;
+    padding-right: 4px; 
+}
+
+.account-list::-webkit-scrollbar {
+    width: 4px;
+}
+.account-list::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 4px;
+}
+
+.account-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 0.8rem;
+}
+
+.account-item:last-child {
+    border-bottom: none;
+}
+
+.account-info {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding-right: 10px;
+}
+
+.account-info span {
+    color: #666;
+}
+
+.account-info strong {
+    color: #1A1A1A;
+    font-size: 0.85rem;
+}
+
+.btn-delete {
+    background: #FFEBEE;
+    color: var(--danger-red);
+    border: none;
+    border-radius: 6px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: background 0.2s ease, transform 0.1s;
+}
+
+.btn-delete:hover {
+    background: #FFCDD2;
+}
+
+.btn-delete:active {
+    transform: scale(0.9);
+}
+
+/* Formulário de Adição */
+.add-account-form {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.add-account-form h4 {
+    margin: 0 0 6px 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.add-account-form input {
+    width: 100%;
+    padding: 9px 10px;
+    margin-bottom: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.add-account-form input:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.btn {
+    width: 100%;
+    padding: 9px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 6px;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-save {
+    background: var(--primary-green);
+    color: white;
+}
+
+.btn-save:hover {
+    background: #43A047; 
+}
+
+.btn-save:active {
+    transform: scale(0.98);
+}
+
+.hidden {
+    display: none !important;
+}
